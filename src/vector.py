@@ -56,7 +56,14 @@ class Vector:
     
     def scale(self, sx:int|float, sy:int|float,*sz:int|float) -> "Vector":
         if self.size == 2:
-            
+            if sz:
+                raise ValueError("Too many scaling factors for 2D vector.")
+            return Vector([sx * self.data[0], sy * self.data[1]])
+        elif self.size == 3:
+            if len(sz) != 1:
+                raise ValueError("Must provide exactly one scaling factor for 3D vector.")
+            sz = sz[0]
+            return Vector([sx * self.data[0], sy * self.data[1], sz * self.data[2]])
     
     def dot(self, other: "Vector") -> int | float:
         if self.shape() != other.shape():
