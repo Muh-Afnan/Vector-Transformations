@@ -201,4 +201,8 @@ class Matrix:
 
     def is_zero(self) -> bool:
         return all(item == 0 for row in self.data for item in row)
+    
+    
+        
+        
         
