@@ -1,6 +1,7 @@
 # transforms.py
 import math
 from src.matrix import Matrix
+from src.vector import Vector
 from src.validator import MatrixValidator
 
 def eigenvalues_2x2(A: Matrix) -> list[float]:
@@ -28,14 +29,14 @@ def eigenvector_2x2(A: Matrix, lam: float) -> Matrix:
     elif c != 0:
         x, y = lam - d, c
     else:
-        if lam == a:
+        if abs(lam - a)<1e-9:
             x, y = 1, 0
         else:
             x, y = 0, 1
     magnitude = math.sqrt(x**2 + y**2)
     if magnitude == 0:
         raise ValueError("Zero vector encountered")
-    return Matrix([[x / magnitude], [y / magnitude]])
+    return Vector([[x / magnitude], [y / magnitude]])
 
 def eigen_2x2(A: Matrix) -> tuple[list[float], list[list[float]]]:
     lambdas = eigenvalues_2x2(A)   # already validates square

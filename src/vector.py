@@ -1,5 +1,6 @@
 import copy
 import math
+# from src.matrix import Matrix  
 
 class Vector:
 
@@ -28,13 +29,13 @@ class Vector:
         if not isinstance(other, Vector):
             return NotImplemented
         if self.shape() != other.shape():
-            raise ValueError("Vectors must have the same size for comparison.")
+            return False
         return all(
             abs(v1-v2) < 1e-9
             for v1, v2 in zip(self.data, other.data)
         )
     
-    def _add__(self, other:object)->"Vector":
+    def __add__(self, other:object)->"Vector":
         if not isinstance(other, Vector):
             return NotImplemented
         if self.shape() != other.shape():
@@ -50,20 +51,11 @@ class Vector:
         result = [a - b for a, b in zip(self.data, other.data)]
         return Vector(result)
         
-    def scale(self, scalar: int | float) -> "Vector":
-        result = [scalar * x for x in self.data]
-        return Vector(result)
-    
-    def scale(self, sx:int|float, sy:int|float,*sz:int|float) -> "Vector":
-        if self.size == 2:
-            if sz:
-                raise ValueError("Too many scaling factors for 2D vector.")
-            return Vector([sx * self.data[0], sy * self.data[1]])
-        elif self.size == 3:
-            if len(sz) != 1:
-                raise ValueError("Must provide exactly one scaling factor for 3D vector.")
-            sz = sz[0]
-            return Vector([sx * self.data[0], sy * self.data[1], sz * self.data[2]])
+    def __mul__(self, scalar: int | float) -> "Vector":
+        return Vector([x * scalar for x in self.data])
+
+    def __rmul__(self, scalar: int | float) -> "Vector":
+        return self.__mul__(scalar)
     
     def dot(self, other: "Vector") -> int | float:
         if self.shape() != other.shape():
@@ -77,7 +69,7 @@ class Vector:
         mag = self.magnitude()
         if mag == 0:
             raise ValueError("Cannot normalize a zero vector.")
-        return self.scale(1 / mag)  
+        return Vector([x / mag for x in self.data])
     
     def angle_with(self, other: "Vector") -> float:
         if self.shape() != other.shape():
@@ -91,3 +83,7 @@ class Vector:
         # Clamp cos_theta to the range [-1, 1] to avoid numerical issues
         cos_theta = max(-1, min(1, cos_theta))
         return math.acos(cos_theta)
+    
+    def to_matrix(self) -> "object":
+        from src.matrix import Matrix  # avoid circular import
+        return Matrix([[x] for x in self.data])
