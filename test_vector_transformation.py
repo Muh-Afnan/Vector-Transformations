@@ -1,8 +1,11 @@
 import unittest
 import math
+from unittest.mock import patch
 
+from src.eigen import eigen_2x2
 from src.vector import Vector
 from src.matrix import Matrix
+from src.visualizer import plot_grid_transformation
 from src.transformations import (
     rotation_matrix, scale_matrix,
     reflect_x_matrix, reflect_y_matrix, reflect_line_matrix,
@@ -137,6 +140,26 @@ class TestVector(unittest.TestCase):
         m = v.to_matrix()
         self.assertEqual(m.data, [[1], [2]])
 
+    @patch("matplotlib.pyplot.show")
+    def test_visualize_2d(self, _mock_show):
+        axis = Vector([1, 2]).visualize(show=False)
+        self.assertIsNotNone(axis)
+
+    def test_visualize_non_2d(self):
+        with self.assertRaises(ValueError):
+            Vector([1, 2, 3]).visualize(show=False)
+
+    @patch("src.visualizer.visualize_transformations")
+    def test_visualize_transformation(self, mock_visualize_transformations):
+        v1 = Vector([1, 0])
+        v2 = Vector([0, 1])
+        v1.visualize_transformation(v2, "Test")
+        mock_visualize_transformations.assert_called_once_with([v1], [v2], "Test")
+
+    def test_visualize_transformation_non_2d(self):
+        with self.assertRaises(ValueError):
+            Vector([1, 2, 3]).visualize_transformation(Vector([1, 2, 3]))
+
 
 # =========================
 # 🧱 MATRIX FACTORIES
@@ -160,13 +183,25 @@ class TestMatrixFactories(unittest.TestCase):
 
     def test_reflect_line_matrix(self):
         m = reflect_line_matrix(0)
-        self.assertEqual(m.data, [[2, 0], [0, -2]])  # based on your implementation
+        self.assertEqual(m.data, [[1, 0], [0, -1]])  # based on your implementation
 
     def test_shear_x_matrix(self):
         self.assertEqual(shear_x_matrix(2).data, [[1, 2], [0, 1]])
 
     def test_shear_y_matrix(self):
         self.assertEqual(shear_y_matrix(2).data, [[1, 0], [2, 1]])
+
+    @patch("src.visualizer.plot_grid_transformation")
+    def test_matrix_visualize_grid_transformation(self, mock_plot_grid):
+        matrix = Matrix([[1, 0], [0, 1]])
+        matrix.visualize_grid_transformation(show=False)
+        mock_plot_grid.assert_called_once_with(matrix, show=False)
+
+    @patch("src.eigen.eigen_2x2")
+    def test_matrix_visualize_eigenvectors(self, mock_eigen_2x2):
+        matrix = Matrix([[2, 0], [0, 1]])
+        matrix.visualize_eigenvectors(show=False)
+        mock_eigen_2x2.assert_called_once_with(matrix, visualize=False)
 
 
 # =========================
@@ -189,10 +224,29 @@ class TestTransformations(unittest.TestCase):
         with self.assertRaises(ValueError):
             transform(Matrix([[1, 2, 3]]), Vector([1, 2]))
 
+    @patch("src.visualizer.visualize_transformations")
+    def test_transform_visualize(self, mock_visualize_transformations):
+        vector = Vector([1, 0])
+        matrix = rotation_matrix(math.pi / 2)
+        result = transform(matrix, vector, visualize=True, title="Rotate")
+        self.assertAlmostEqual(result.data[0], 0, places=6)
+        self.assertAlmostEqual(result.data[1], 1, places=6)
+        mock_visualize_transformations.assert_called_once_with([vector], [result], "Rotate")
+
+    def test_transform_visualize_non_2d(self):
+        with self.assertRaises(ValueError):
+            transform(Matrix([[1, 0, 0], [0, 1, 0]]), Vector([1, 2, 3]), visualize=True)
+
     def test_rotate_transform(self):
         v = Vector([1, 0])
         result = rotate_transform(v, math.pi / 2)
         self.assertAlmostEqual(result.data[1], 1, places=6)
+
+    @patch("src.visualizer.visualize_transformations")
+    def test_rotate_transform_visualize(self, mock_visualize_transformations):
+        v = Vector([1, 0])
+        result = rotate_transform(v, math.pi / 2, visualize=True, title="Rotation")
+        mock_visualize_transformations.assert_called_once_with([v], [result], "Rotation")
 
     def test_rotation_inverse(self):
         v = Vector([1, 2])
@@ -221,7 +275,11 @@ class TestTransformations(unittest.TestCase):
     def test_reflect_line(self):
         v = Vector([1, 0])
         result = reflect_line(v, 0)
-        self.assertEqual(result, Vector([2, 0]))
+        self.assertEqual(result, Vector([1, 0]))
+
+    def test_reflect_line(self):
+        result = reflect_line(Vector([0, 1]), 0)
+        self.assertEqual(result, Vector([0, -1]))
 
 
 # =========================
@@ -238,6 +296,53 @@ class TestProjection(unittest.TestCase):
     def test_project_zero(self):
         with self.assertRaises(ValueError):
             project_onto(Vector([1, 2]), Vector([0, 0]))
+
+    def test_project_idempotent(self):
+        v = Vector([3, 4])
+        axis = Vector([1, 0])
+        once = project_onto(v, axis)
+        twice = project_onto(once, axis)
+        self.assertEqual(once, twice)
+
+    def test_eigenvector_property(self):
+        A = Matrix([[3, 1], [0, 2]])
+        lambdas, vectors = eigen_2x2(A)
+        for lam, vec in zip(lambdas, vectors):
+            Av = transform(A, vec)
+            lv = vec * lam
+            self.assertEqual(Av, lv)
+
+    def test_scale_preserves_direction(self):
+        v = Vector([1, 0])
+        result = transform(scale_matrix(3, 3), v)
+        self.assertAlmostEqual(v.angle_with(result), 0, places=6)
+
+    def test_double_reflect_x_is_identity(self):
+        v = Vector([3, 4])
+        self.assertEqual(reflect_x(reflect_x(v)), v)
+
+    def test_project_direction_independent_of_scale(self):
+        v = Vector([2, 2])
+        p1 = project_onto(v, Vector([1, 0]))
+        p2 = project_onto(v, Vector([5, 0]))
+        self.assertEqual(p1.normalize(), p2.normalize())
+
+
+class TestVisualizationIntegration(unittest.TestCase):
+
+    @patch("src.visualizer.visualize_eigenvectors")
+    def test_eigen_2x2_visualize(self, mock_visualize_eigenvectors):
+        matrix = Matrix([[3, 1], [0, 2]])
+        lambdas, vectors = eigen_2x2(matrix, visualize=True)
+        self.assertEqual(len(lambdas), 2)
+        self.assertEqual(len(vectors), 2)
+        mock_visualize_eigenvectors.assert_called_once_with(matrix, vectors)
+
+    @patch("src.visualizer.visualize_transformations")
+    def test_plot_grid_transformation(self, mock_visualize_transformations):
+        matrix = Matrix([[1, 0], [0, 1]])
+        plot_grid_transformation(matrix, show=False)
+        self.assertTrue(mock_visualize_transformations.called)
 
 
 # =========================

@@ -21,7 +21,7 @@ def eigenvalues_2x2(A: Matrix) -> list[float]:
     return [(trace + sqrt_disc) / 2, (trace - sqrt_disc) / 2]
 
 
-def eigenvector_2x2(A: Matrix, lam: float) -> Matrix:
+def eigenvector_2x2(A: Matrix, lam: float) -> Vector:
     a, b = A.data[0][0], A.data[0][1]
     c, d = A.data[1][0], A.data[1][1]
     if b != 0:
@@ -36,9 +36,14 @@ def eigenvector_2x2(A: Matrix, lam: float) -> Matrix:
     magnitude = math.sqrt(x**2 + y**2)
     if magnitude == 0:
         raise ValueError("Zero vector encountered")
-    return Vector([[x / magnitude], [y / magnitude]])
+    return Vector([x / magnitude, y / magnitude])
 
-def eigen_2x2(A: Matrix) -> tuple[list[float], list[list[float]]]:
-    lambdas = eigenvalues_2x2(A)   # already validates square
+def eigen_2x2(A: Matrix, visualize: bool = False) -> tuple[list[float], list[Vector]]:
+    lambdas = eigenvalues_2x2(A)
     vectors = [eigenvector_2x2(A, lam) for lam in lambdas]
+
+    if visualize:
+        from src.visualizer import visualize_eigenvectors
+        visualize_eigenvectors(A, vectors)
+
     return lambdas, vectors

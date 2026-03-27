@@ -1,6 +1,5 @@
 import copy
 import math
-# from src.matrix import Matrix  
 
 class Vector:
 
@@ -87,3 +86,59 @@ class Vector:
     def to_matrix(self) -> "object":
         from src.matrix import Matrix  # avoid circular import
         return Matrix([[x] for x in self.data])
+
+    def visualize(
+        self,
+        color: str = "blue",
+        label: str = "Vector",
+        xlim: tuple[int | float, int | float] = (-5, 5),
+        ylim: tuple[int | float, int | float] = (-5, 5),
+        show: bool = True,
+    ) -> "object":
+        """
+        Plot this vector in 2D.
+        Raises ValueError if the vector is not 2D.
+        """
+        if self.size != 2:
+            raise ValueError("Visualization is only supported for 2D vectors.")
+
+        import matplotlib.pyplot as plt
+
+        plt.figure(figsize=(8, 8))
+        plt.arrow(
+            0,
+            0,
+            self.data[0],
+            self.data[1],
+            head_width=0.1,
+            head_length=0.1,
+            fc=color,
+            ec=color,
+        )
+        plt.text(self.data[0], self.data[1], label, fontsize=12)
+        plt.xlim(*xlim)
+        plt.ylim(*ylim)
+        plt.axhline(0, color="gray", lw=0.5)
+        plt.axvline(0, color="gray", lw=0.5)
+        plt.grid()
+        plt.title(label)
+
+        if show:
+            plt.show()
+
+        return plt.gca()
+
+    def visualize_transformation(
+        self,
+        transformed: "Vector",
+        title: str = "Vector Transformation",
+    ) -> None:
+        """
+        Visualize this 2D vector against its transformed 2D vector.
+        """
+        if self.size != 2 or transformed.size != 2:
+            raise ValueError("Transformation visualization is only supported for 2D vectors.")
+
+        from src.visualizer import visualize_transformations
+
+        visualize_transformations([self], [transformed], title)

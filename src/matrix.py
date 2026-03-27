@@ -201,6 +201,24 @@ class Matrix:
 
     def is_zero(self) -> bool:
         return all(item == 0 for row in self.data for item in row)
+
+    def visualize_grid_transformation(self, show: bool = True) -> "object":
+        """
+        Visualize this matrix as a 2D grid transformation.
+        Requires a 2x2 matrix.
+        """
+        if self.shape() != (2, 2):
+            raise ValueError("Grid visualization is only supported for 2x2 matrices.")
+        from src.visualizer import plot_grid_transformation
+        return plot_grid_transformation(self, show=show)
+
+    def visualize_eigenvectors(self, show: bool = True) -> tuple[list[float], list["Vector"]]:
+        """
+        Compute and optionally visualize eigenvectors for this 2x2 matrix.
+        Returns (eigenvalues, eigenvectors).
+        """
+        from src.eigen import eigen_2x2
+        return eigen_2x2(self, visualize=show)
     
     
         
