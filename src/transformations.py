@@ -8,13 +8,18 @@ def rotation_matrix(theta: float)->"Matrix":
         return Matrix([[cos_theta,-sin_theta],[sin_theta,cos_theta]])
     
 def scale_matrix(sx:int|float, sy:int|float)-> "Matrix":
-    return Matrix([[sx*1,0],[0,sy*1]])
+    return Matrix([[sx,0],[0,sy]])
 
 def reflect_x_matrix()->"Matrix":
     return Matrix([[1,0],[0,-1]])
 
 def reflect_y_matrix()->"Matrix":
     return Matrix([[-1,0],[0,1]])
+
+def reflect_line_matrix(theta:int|float)->"Matrix":
+    cos_theta = math.cos(2*theta)
+    sin_theta = math.sin(2*theta)
+    return Matrix([[cos_theta,sin_theta],[sin_theta,-cos_theta]])
 
 def shear_x_matrix(factor:int|float)->"Matrix":
     return Matrix([[1,factor],[0,1]])
@@ -50,6 +55,14 @@ def shear_y(vector:Vector,factor:float|int)->Vector:
     return transform(shear_matrix,vector)
 
 def reflect_line(vector:Vector,theta:float|int)->Vector:
-    
+    reflect_matrix = reflect_line_matrix(theta)
+    return transform(reflect_matrix,vector)
 
+def project_onto(vector1:Vector, vector2:Vector)->Vector:
+    v1v2_dot = vector1.dot(vector2)
+    v2v2_dot = vector2.dot(vector2)
+    if v2v2_dot == 0:
+        raise ValueError("Cannot project onto zero vector")
+    scalar = v1v2_dot/v2v2_dot
+    return vector2 * scalar
 
