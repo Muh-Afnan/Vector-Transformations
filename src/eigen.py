@@ -24,9 +24,9 @@ def eigenvalues_2x2(A: Matrix) -> list[float]:
 def eigenvector_2x2(A: Matrix, lam: float) -> Vector:
     a, b = A.data[0][0], A.data[0][1]
     c, d = A.data[1][0], A.data[1][1]
-    if b != 0:
+    if abs(b) > 1e-9:
         x, y = b, lam - a
-    elif c != 0:
+    elif abs(c) > 1e-9:
         x, y = lam - d, c
     else:
         if abs(lam - a)<1e-9:
@@ -44,6 +44,6 @@ def eigen_2x2(A: Matrix, visualize: bool = False) -> tuple[list[float], list[Vec
 
     if visualize:
         from src.visualizer import visualize_eigenvectors
-        visualize_eigenvectors(A, vectors)
+        visualize_eigenvectors(A, vectors,lambdas)
 
     return lambdas, vectors
